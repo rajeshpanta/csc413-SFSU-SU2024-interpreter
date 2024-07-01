@@ -1,54 +1,65 @@
 package interpreter.loaders;
 
+import interpreter.bytecodes.ByteCode;
+import interpreter.bytecodes.Call;
+import interpreter.bytecodes.Goto;
+import interpreter.bytecodes.FalseBranch;
+import interpreter.bytecodes.Label;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
 public class Program {
+    private List<ByteCode> byteCodes;
+    private HashMap<String, Integer> labelAddresses;  // For mapping label identifiers to bytecode indices
 
-    private List<ByteCode> program;
-
-    /**
-     * Instantiates a program object using an
-     * ArrayList
-     */
     public Program() {
-
+        this.byteCodes = new ArrayList<>();
+        this.labelAddresses = new HashMap<>();
     }
 
-    /**
-     * Gets the size of the current program.
-     * @return size of program
-     */
-    public int getSize() {
-        return 0;
+    public void addCode(ByteCode byteCode) {
+        byteCodes.add(byteCode);
+        if (byteCode instanceof Label) {
+            Label label = (Label) byteCode;
+            labelAddresses.put(label.getLabel(), byteCodes.size() - 1);
+        }
     }
 
-    /**
-     * Grabs an instance of a bytecode at an index.
-     * @param programCounter index of bytecode to get.
-     * @return a bytecode.
-     */
     public ByteCode getCode(int programCounter) {
-        return null;
+        if (programCounter >= 0 && programCounter < byteCodes.size()) {
+            return byteCodes.get(programCounter);
+        }
+        return null;  // Return null if the index is out of bounds
     }
 
-    /**
-     * Adds a bytecode instance to the Program List.
-     * @param c bytecode to be added
-     */
-    public void addCode(ByteCode c) {
-
+    public int getSize() {
+        return byteCodes.size();
     }
 
-    /**
-     * Makes multiple passes through the program ArrayList
-     * resolving addrss for Goto,Call and FalseBranch
-     * bytecodes. These bytecodes can only jump to Label
-     * codes that have a matching label value.
-     * HINT: make note of what type of data-structure
-     * ByteCodes are stored in.
-     * **** METHOD SIGNATURE CANNOT BE CHANGED *****
-     */
     public void resolveAddress() {
-
+        // Iterate over all bytecodes to resolve addresses for goto, call, and false branch instructions
+        for (ByteCode bytecode : byteCodes) {
+            if (bytecode instanceof Goto) {
+                Goto gotoCode = (Goto) bytecode;
+                Integer targetIndex = labelAddresses.get(gotoCode.getLabel());
+                if (targetIndex != null) {
+                    gotoCode.setTargetAddress(targetIndex);
+                }
+            } else if (bytecode instanceof Call) {
+                Call callCode = (Call) bytecode;
+                Integer targetIndex = labelAddresses.get(callCode.getLabel());
+                if (targetIndex != null) {
+                    callCode.setTargetAddress(targetIndex);
+                }
+            } else if (bytecode instanceof FalseBranch) {
+                FalseBranch falseBranchCode = (FalseBranch) bytecode;
+                Integer targetIndex = labelAddresses.get(falseBranchCode.getLabel());
+                if (targetIndex != null) {
+                    falseBranchCode.setTargetAddress(targetIndex);
+                }
+            }
+        }
     }
-}   
+}
